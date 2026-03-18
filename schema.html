@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKEA Brand Intelligence Platform</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f8f9fc;
+    color: #1a1a2e;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    padding: 48px;
+    min-width: 1400px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .header h1 { font-size: 30px; font-weight: 800; color: #111827; letter-spacing: -0.5px; }
+  .header h1 span { color: #2563eb; }
+  .header .sub { font-size: 13px; color: #6b7280; margin-top: 6px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .header .tagline { font-size: 15px; color: #374151; margin-top: 8px; font-style: italic; }
+
+  .stats { display: flex; gap: 12px; margin-bottom: 40px; }
+  .stat { flex: 1; background: #fff; border-radius: 10px; padding: 16px; text-align: center; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .stat .num { font-size: 24px; font-weight: 800; }
+  .stat .lbl { font-size: 11px; color: #6b7280; margin-top: 3px; }
+
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #9ca3af; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+  .divider { height: 1px; background: #e5e7eb; margin: 36px 0; }
+
+  /* PIPELINE */
+  .pipeline { display: flex; align-items: stretch; background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 40px; }
+  .pipe-node { flex: 1; padding: 20px 16px; border-right: 1px solid #f3f4f6; }
+  .pipe-node:last-child { border-right: none; }
+  .pipe-node .top-bar { height: 4px; border-radius: 2px; margin-bottom: 14px; }
+  .pipe-node .picon { font-size: 20px; margin-bottom: 8px; }
+  .pipe-node .ptitle { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .pipe-node .pitems { font-size: 11px; color: #6b7280; line-height: 1.7; }
+  .pipe-arrow { display: flex; align-items: center; padding: 0 6px; color: #d1d5db; font-size: 20px; flex-shrink: 0; }
+
+  .p-red .top-bar { background: #ef4444; } .p-red .ptitle { color: #dc2626; }
+  .p-orange .top-bar { background: #f97316; } .p-orange .ptitle { color: #ea6e0e; }
+  .p-purple .top-bar { background: #8b5cf6; } .p-purple .ptitle { color: #7c3aed; }
+  .p-blue .top-bar { background: #3b82f6; } .p-blue .ptitle { color: #2563eb; }
+  .p-green .top-bar { background: #22c55e; } .p-green .ptitle { color: #16a34a; }
+  .p-yellow .top-bar { background: #eab308; } .p-yellow .ptitle { color: #ca8a04; }
+
+  /* WORKFLOWS */
+  .wf-container { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 40px; }
+  .wf-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f3f4f6; gap: 8px; }
+  .wf-row:last-child { border-bottom: none; }
+  .wf-label { min-width: 235px; flex-shrink: 0; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-align: center; }
+  .wf-node { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; flex-shrink: 0; text-align: center; }
+  .wf-node .ni { font-size: 16px; }
+  .wf-node .nn { font-size: 11px; font-weight: 600; color: #111827; margin-top: 2px; }
+  .wf-node .ns { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+  .wf-arrow { color: #d1d5db; font-size: 14px; flex-shrink: 0; padding: 0 2px; }
+  .chip { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+  .chip-green { background: #d1fae5; color: #065f46; }
+  .chip-yellow { background: #fef3c7; color: #92400e; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+
+  .c1 { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; } .c1b { border-left: 3px solid #f97316; }
+  .c2 { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; } .c2b { border-left: 3px solid #3b82f6; }
+  .c3 { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; } .c3b { border-left: 3px solid #ef4444; }
+  .c4 { background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; } .c4b { border-left: 3px solid #8b5cf6; }
+  .c5 { background:#fdf2f8; color:#9d174d; border:1px solid #fbcfe8; } .c5b { border-left: 3px solid #ec4899; }
+  .c6 { background:#f0fdfa; color:#0f766e; border:1px solid #99f6e4; } .c6b { border-left: 3px solid #14b8a6; }
+  .c7 { background:#fffbeb; color:#b45309; border:1px solid #fde68a; } .c7b { border-left: 3px solid #f59e0b; }
+
+  /* FEATURES */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+  .feat { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+  .feat::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .feat.f1::after { background: #ef4444; } .feat.f2::after { background: #f97316; }
+  .feat.f3::after { background: #3b82f6; } .feat.f4::after { background: #22c55e; }
+  .feat.f5::after { background: #eab308; } .feat.f6::after { background: #8b5cf6; }
+  .feat .ficon { font-size: 26px; margin-bottom: 10px; }
+  .feat .ftitle { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+  .feat .fdesc { font-size: 11px; color: #6b7280; line-height: 1.7; }
+  .feat .fmetric { font-size: 12px; font-weight: 700; margin-top: 10px; }
+  .feat.f1 .fmetric { color: #ef4444; } .feat.f2 .fmetric { color: #f97316; }
+  .feat.f3 .fmetric { color: #3b82f6; } .feat.f4 .fmetric { color: #22c55e; }
+  .feat.f5 .fmetric { color: #eab308; } .feat.f6 .fmetric { color: #8b5cf6; }
+
+  /* COMPARISON */
+  .compare { display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+  .comp-side { padding: 28px 32px; }
+  .comp-side h3 { font-size: 13px; font-weight: 700; margin-bottom: 18px; }
+  .comp-side ul { list-style: none; }
+  .comp-side ul li { font-size: 12px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; }
+  .comp-side ul li:last-child { border-bottom: none; }
+  .comp-side ul li .ico { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .comp-left { background: #fafafa; }
+  .comp-left h3 { color: #6b7280; }
+  .comp-left ul li { color: #6b7280; }
+  .comp-right { background: #f0fdf4; }
+  .comp-right h3 { color: #15803d; }
+  .comp-right ul li { color: #111827; font-weight: 500; }
+  .vs-center { display: flex; align-items: center; justify-content: center; background: #fff; align-self: stretch; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+  .vs-circle { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #3b82f6); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>IKEA <span>Brand Intelligence</span> Platform</h1>
+  <div class="sub">BDD Eugenia × Licter 2026</div>
+  <div class="tagline">Social Data → Prédiction → Décision → Action</div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="num" style="color:#ef4444">9</div><div class="lbl">Sources surveillées</div></div>
+  <div class="stat"><div class="num" style="color:#f97316">5 250</div><div class="lbl">Lignes analysées</div></div>
+  <div class="stat"><div class="num" style="color:#8b5cf6">7</div><div class="lbl">Workflows N8N</div></div>
+  <div class="stat"><div class="num" style="color:#3b82f6">&lt; 2h</div><div class="lbl">Détection de crise</div></div>
+  <div class="stat"><div class="num" style="color:#22c55e">48h</div><div class="lbl">Prédiction avant explosion</div></div>
+  <div class="stat"><div class="num" style="color:#eab308">1.08M€</div><div class="lbl">CA menacé détecté</div></div>
+</div>
+
+<div class="section-label">⚡ Pipeline Global — De la donnée brute à la décision</div>
+<div class="pipeline">
+  <div class="pipe-node p-red">
+    <div class="top-bar"></div>
+    <div class="picon">🌐</div>
+    <div class="ptitle">SOURCES</div>
+    <div class="pitems">Trustpilot · Reddit<br>Twitter/X · TikTok<br>Facebook · Google Maps<br>App Store · Avis Vérifiés<br>LinkedIn</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node p-orange">
+    <div class="top-bar"></div>
+    <div class="picon">🤖</div>
+    <div class="ptitle">APIFY</div>
+    <div class="pitems">Web Scraper automatisé<br>Formate en JSON<br>9 sources / toutes les heures</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node p-purple">
+    <div class="top-bar"></div>
+    <div class="picon">⚙️</div>
+    <div class="ptitle">N8N</div>
+    <div class="pitems">7 workflows automatisés<br>Scoring · Alertes · Rapports<br>Playbook · Prédiction</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node p-blue">
+    <div class="top-bar"></div>
+    <div class="picon">🧠</div>
+    <div class="ptitle">OPENAI</div>
+    <div class="pitems">gpt-4o-mini<br>Sentiment Pos / Neg / Neu<br>Topic · Confidence score</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node p-green">
+    <div class="top-bar"></div>
+    <div class="picon">🗄️</div>
+    <div class="ptitle">SUPABASE</div>
+    <div class="pitems">PostgreSQL<br>reputation_crise<br>benchmark_marche<br>voix_client_cx<br>crisis_predictions</div>
+  </div>
+  <div class="pipe-arrow">→</div>
+  <div class="pipe-node p-yellow">
+    <div class="top-bar"></div>
+    <div class="picon">📊</div>
+    <div class="ptitle">OUTPUTS</div>
+    <div class="pitems">Dashboard Antigravity live<br>Slack Alerts 🚨 temps réel<br>Magazine COMEX PDF<br>Rapport hebdo automatique</div>
+  </div>
+</div>
+
+<div class="section-label">⚙️ Les 7 Workflows N8N — Automatisation complète de bout en bout</div>
+<div class="wf-container">
+
+  <div class="wf-row">
+    <div class="wf-label c1">N°1 — SCRAPING — Toutes les heures</div>
+    <div class="wf-node c1b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">Toutes les heures</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c1b"><div class="ni">🤖</div><div class="nn">Apify Actor</div><div class="ns">Trustpilot · Reddit · Twitter · TikTok</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c1b"><div class="ni">📥</div><div class="nn">Webhook N8N</div><div class="ns">Reçoit le JSON brut</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c1b"><div class="ni">🔧</div><div class="nn">SET Node</div><div class="ns">Normalise les champs</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c1b"><div class="ni">🗄️</div><div class="nn">Supabase INSERT</div><div class="ns">3 tables alimentées</div></div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c2">N°2 — SCORING IA — Toutes les heures</div>
+    <div class="wf-node c2b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">Toutes les heures</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c2b"><div class="ni">🗄️</div><div class="nn">Supabase SELECT</div><div class="ns">sentiment IS NULL · 50 lignes</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c2b"><div class="ni">🔄</div><div class="nn">Split Batches</div><div class="ns">1 item à la fois</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c2b"><div class="ni">🧠</div><div class="nn">OpenAI gpt-4o-mini</div><div class="ns">sentiment + topic + confidence</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c2b"><div class="ni">🔧</div><div class="nn">Code Parser</div><div class="ns">Parse le JSON OpenAI</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c2b"><div class="ni">🗄️</div><div class="nn">Supabase UPDATE</div><div class="ns">sentiment + topic mis à jour</div></div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c3">N°3 — ALERTE CRISE — 30 min</div>
+    <div class="wf-node c3b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">30 minutes</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c3b"><div class="ni">🗄️</div><div class="nn">Supabase SELECT</div><div class="ns">Negative + likes &gt; 1000</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c3b"><div class="ni">✅</div><div class="nn">IF Node</div><div class="ns">Posts viraux détectés ?</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c3b">
+      <div class="ni">🚨</div><div class="nn">Slack #comex-urgent</div><div class="ns">Plateforme · Likes · Texte</div>
+      <div class="chip chip-green">Détection &lt; 2h</div>
+    </div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c4">N°4 — AUTO-RÉPONSE — 30 min</div>
+    <div class="wf-node c4b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">30 minutes</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c4b"><div class="ni">🗄️</div><div class="nn">Supabase SELECT</div><div class="ns">likes &gt; 5000 + Negative</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c4b"><div class="ni">✅</div><div class="nn">IF Node</div><div class="ns">Ultra-viral ?</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c4b"><div class="ni">🔄</div><div class="nn">Split Batches</div><div class="ns">1 post à la fois</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c4b"><div class="ni">🧠</div><div class="nn">OpenAI</div><div class="ns">Génère réponse empathique</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c4b">
+      <div class="ni">💬</div><div class="nn">Slack validation CM</div><div class="ns">Réponse à valider avant post</div>
+      <div class="chip chip-yellow">Validation humaine</div>
+    </div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c5">N°5 — PREDICTIVE SCORE — Toutes les heures</div>
+    <div class="wf-node c5b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">Toutes les heures</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c5b"><div class="ni">🗄️</div><div class="nn">Supabase SELECT</div><div class="ns">Mentions 7 derniers jours</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c5b"><div class="ni">🔧</div><div class="nn">Code Velocity</div><div class="ns">mentions J-1 ÷ moy. 7 jours</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c5b"><div class="ni">🗄️</div><div class="nn">Supabase INSERT</div><div class="ns">crisis_predictions</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c5b"><div class="ni">✅</div><div class="nn">IF Critique ?</div><div class="ns">Niveau élevé → alerter</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c5b">
+      <div class="ni">🔮</div><div class="nn">Slack prédiction</div><div class="ns">Probabilité + Pic estimé</div>
+      <div class="chip chip-red">48h avant explosion</div>
+    </div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c6">N°6 — RAPPORT HEBDO — Lundi 8h00</div>
+    <div class="wf-node c6b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">Lundi 8h00</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c6b"><div class="ni">🌐</div><div class="nn">HTTP Supabase</div><div class="ns">Stats 7 derniers jours</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c6b"><div class="ni">🔧</div><div class="nn">Code Stats</div><div class="ns">Calcule totaux + %</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c6b"><div class="ni">🧠</div><div class="nn">OpenAI rapport</div><div class="ns">5 paragraphes niveau COMEX</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c6b">
+      <div class="ni">📄</div><div class="nn">Slack rapport</div><div class="ns">Chiffres + analyse + reco</div>
+      <div class="chip chip-green">Économise 3h / semaine</div>
+    </div>
+  </div>
+
+  <div class="wf-row">
+    <div class="wf-label c7">N°7 — PLAYBOOK + CONCURRENT — 2h</div>
+    <div class="wf-node c7b"><div class="ni">⏰</div><div class="nn">Schedule</div><div class="ns">Toutes les 2 heures</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c7b"><div class="ni">🗄️</div><div class="nn">Supabase SELECT</div><div class="ns">Dernière prédiction</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c7b"><div class="ni">✅</div><div class="nn">IF Crise active ?</div><div class="ns">Non-normal → continuer</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c7b"><div class="ni">🧠</div><div class="nn">OpenAI playbook</div><div class="ns">H+0 → J+7 + Leroy Merlin</div></div>
+    <div class="wf-arrow">→</div>
+    <div class="wf-node c7b">
+      <div class="ni">📋</div><div class="nn">Slack playbook</div><div class="ns">Plan complet + opportunité concurrent</div>
+      <div class="chip chip-yellow">Plan H+0 à J+7</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-label">🚀 Ce qui nous différencie — Au-delà du simple monitoring</div>
+<div class="features">
+  <div class="feat f1">
+    <div class="ficon">🔮</div>
+    <div class="ftitle">PREDICTIVE CRISIS SCORE</div>
+    <div class="fdesc">Prédit la crise 48h avant qu'elle explose dans les médias. Velocity = mentions J-1 ÷ moyenne 7 jours. Niveaux : Normal → Modéré → Élevé → Critique.</div>
+    <div class="fmetric">Probabilité 78% — Pic dans 36h</div>
+  </div>
+  <div class="feat f2">
+    <div class="ficon">🕸️</div>
+    <div class="ftitle">INFLUENCE NETWORK MAP</div>
+    <div class="fdesc">Identifie les 5 comptes responsables de 80% de la crise. Impact Score = likes × log(followers) × replies_ratio. Contacter la source directement.</div>
+    <div class="fmetric">5 comptes → 80% de l'amplification</div>
+  </div>
+  <div class="feat f3">
+    <div class="ficon">📄</div>
+    <div class="ftitle">RAPPORT AUTO-GÉNÉRÉ</div>
+    <div class="fdesc">Rapport exécutif envoyé chaque lundi à 8h sans intervention manuelle. N8N génère → OpenAI rédige → Slack envoie automatiquement.</div>
+    <div class="fmetric">Économise 3h de travail / semaine</div>
+  </div>
+  <div class="feat f4">
+    <div class="ficon">🎯</div>
+    <div class="ftitle">COMPETITOR OPPORTUNITY</div>
+    <div class="fdesc">Quand IKEA souffre, détecte automatiquement la fenêtre d'opportunité pour Leroy Merlin. Recommandations marketing actionnables en temps réel.</div>
+    <div class="fmetric">Fenêtre de 48-72h identifiée</div>
+  </div>
+  <div class="feat f5">
+    <div class="ficon">💰</div>
+    <div class="ftitle">CRISIS ROI CALCULATOR</div>
+    <div class="fdesc">Quantifie le coût business de ne pas agir — en euros, pas en mentions. 800 alertes × 2 517 reach = 2M personnes exposées.</div>
+    <div class="fmetric">CA menacé estimé : 1 087 380€</div>
+  </div>
+  <div class="feat f6">
+    <div class="ficon">📋</div>
+    <div class="ftitle">SMART PLAYBOOK GENERATOR</div>
+    <div class="fdesc">Plan d'action complet généré par IA selon le type de crise. H+0 Alerte COMEX → H+2 Réponse → H+24 FAQ → H+48 Bilan → J+7 Mesures correctives.</div>
+    <div class="fmetric">Plan complet en moins de 2 minutes</div>
+  </div>
+</div>
+
+<div class="section-label">⚖️ Pourquoi on gagne</div>
+<div class="compare">
+  <div class="comp-side comp-left">
+    <h3>❌ Outils existants — Brandwatch · Mention · Talkwalker</h3>
+    <ul>
+      <li><span class="ico">✗</span> Détectent la crise quand elle est déjà là</li>
+      <li><span class="ico">✗</span> Affichent les données sans recommandation d'action</li>
+      <li><span class="ico">✗</span> Rapports créés manuellement chaque semaine</li>
+      <li><span class="ico">✗</span> Analysent une seule marque à la fois</li>
+      <li><span class="ico">✗</span> Disent "le SAV est un problème"</li>
+      <li><span class="ico">✗</span> Aucune prédiction d'évolution possible</li>
+    </ul>
+  </div>
+  <div class="vs-center">
+    <div class="vs-circle">VS</div>
+  </div>
+  <div class="comp-side comp-right">
+    <h3>✅ IKEA Brand Intelligence Platform</h3>
+    <ul>
+      <li><span class="ico">✓</span> Prédit la crise 48h avant l'explosion médias</li>
+      <li><span class="ico">✓</span> Recommande les actions à prendre avec timeline H+0 à J+7</li>
+      <li><span class="ico">✓</span> Rapport exécutif auto-généré chaque lundi à 8h</li>
+      <li><span class="ico">✓</span> Analyse tout l'écosystème compétitif IKEA + Leroy Merlin</li>
+      <li><span class="ico">✓</span> Dit "1 087 380€ de CA menacé — agir maintenant"</li>
+      <li><span class="ico">✓</span> Velocity Score + Probabilité d'explosion en temps réel</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>
