@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKEA Brand Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+/* ─── RESET & BASE ─── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f0f2f8;
+  --card:#fff;
+  --border:#e5e9f2;
+  --text:#111827;
+  --muted:#6b7280;
+  --red:#ef4444;--red-light:#fef2f2;
+  --blue:#2563eb;--blue-light:#eff6ff;
+  --yellow:#f59e0b;--yellow-light:#fffbeb;
+  --green:#16a34a;--green-light:#f0fdf4;
+  --purple:#7c3aed;--purple-light:#f5f3ff;
+  --orange:#ea580c;--orange-light:#fff7ed;
+  --radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.04);
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  background:#fff;
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-badge{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#1a56db,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.logo-text{font-size:15px;font-weight:700;color:#111827}
+.logo-text span{color:#2563eb}
+.logo-sub{font-size:11px;color:#9ca3af;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.live-badge{
+  display:flex;align-items:center;gap:6px;
+  background:#f0fdf4;border:1px solid #bbf7d0;
+  border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:#15803d;
+}
+.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.bhi-topbar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--blue-light);border:1px solid #bfdbfe;
+  border-radius:20px;padding:4px 14px;
+}
+.bhi-topbar .val{font-size:16px;font-weight:800;color:var(--blue)}
+.bhi-topbar .lbl{font-size:11px;color:#4b5563;font-weight:500}
+.btn-alert{
+  background:var(--red-light);border:1px solid #fecaca;
+  border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:var(--red);
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  animation:shakealert 3s infinite;
+}
+@keyframes shakealert{0%,90%,100%{transform:translateX(0)}92%{transform:translateX(-3px)}94%{transform:translateX(3px)}96%{transform:translateX(-2px)}98%{transform:translateX(2px)}}
+
+/* ─── CRISIS BANNER ─── */
+.crisis-banner{
+  background:linear-gradient(135deg,#7f1d1d,#991b1b);
+  color:#fff;padding:12px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.crisis-banner .left{display:flex;align-items:center;gap:12px}
+.crisis-badge{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+  border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;
+}
+.crisis-text{font-size:13px}
+.crisis-text strong{font-weight:700}
+.crisis-text span{opacity:.8;font-size:12px;margin-left:8px}
+.crisis-meter{display:flex;align-items:center;gap:10px;font-size:12px}
+.meter-bar{width:120px;height:6px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden}
+.meter-fill{height:100%;background:#fbbf24;border-radius:3px;width:78%}
+
+/* ─── WRAPPER ─── */
+.wrapper{padding:28px 32px;max-width:1600px;margin:0 auto}
+
+/* ─── KPI ROW ─── */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px}
+.kpi{
+  background:var(--card);border-radius:var(--radius);border:1px solid var(--border);
+  box-shadow:var(--shadow);padding:18px 20px;position:relative;overflow:hidden;
+}
+.kpi::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent)}
+.kpi .icon{font-size:20px;margin-bottom:8px}
+.kpi .val{font-size:24px;font-weight:800;color:var(--text);line-height:1}
+.kpi .lbl{font-size:11px;color:var(--muted);margin-top:5px}
+.kpi .delta{font-size:11px;font-weight:600;margin-top:6px;display:flex;align-items:center;gap:3px}
+.delta.up{color:#16a34a}.delta.down{color:var(--red)}.delta.warn{color:var(--yellow)}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:#fff;border-radius:10px;padding:5px;border:1px solid var(--border);width:fit-content}
+.tab{padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .2s}
+.tab.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.tab:hover:not(.active){background:var(--bg);color:var(--text)}
+
+/* ─── VIEWS ─── */
+.view{display:none}.view.active{display:block}
+
+/* ─── GRID ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px}
+.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+.grid-1-2{display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px}
+
+/* ─── CARD ─── */
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:24px;height:100%}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap-sm{position:relative;height:180px}
+.chart-wrap-lg{position:relative;height:280px}
+
+/* ─── ALERT FEED ─── */
+.alert-feed{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto}
+.alert-item{
+  border-radius:8px;padding:12px 14px;border-left:3px solid;
+  background:#fafafa;border:1px solid var(--border);border-left-width:3px;
+}
+.alert-item.negative{border-left-color:var(--red);background:var(--red-light)}
+.alert-item.positive{border-left-color:var(--green);background:var(--green-light)}
+.alert-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.platform-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:#e5e9f2;color:#374151}
+.likes-tag{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px}
+.alert-text{font-size:12px;color:#374151;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ─── PREDICTION CARD ─── */
+.predict-score{
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;padding:24px;
+  background:linear-gradient(135deg,#fdf2f8,#f5f3ff);
+  border-radius:var(--radius);border:1px solid #e9d5ff;
+  margin-bottom:20px;
+}
+.predict-circle{
+  width:100px;height:100px;border-radius:50%;
+  background:linear-gradient(135deg,#ec4899,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;margin-bottom:14px;
+  box-shadow:0 8px 24px rgba(139,92,246,.3);
+}
+.predict-pct{font-size:28px;font-weight:800;color:#fff;line-height:1}
+.predict-pct-lbl{font-size:10px;color:rgba(255,255,255,.8);font-weight:500}
+.predict-title{font-size:14px;font-weight:700;color:#6d28d9;margin-bottom:4px}
+.predict-sub{font-size:12px;color:#7c3aed;text-align:center}
+
+/* ─── COMPETITOR ─── */
+.competitor-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.comp-name{font-size:12px;font-weight:700;width:100px;flex-shrink:0}
+.comp-bar-wrap{flex:1;height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden}
+.comp-bar{height:100%;border-radius:4px;transition:width 1s ease}
+.comp-pct{font-size:12px;font-weight:700;width:36px;text-align:right}
+
+/* ─── SENTIMENT ─── */
+.sent-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sent-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sent-label{font-size:12px;flex:1}
+.sent-bar-wrap{width:120px;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden}
+.sent-bar{height:100%;border-radius:3px}
+.sent-pct{font-size:12px;font-weight:700;width:30px;text-align:right}
+
+/* ─── TOPIC LIST ─── */
+.topic-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid #f3f4f6;
+}
+.topic-item:last-child{border-bottom:none}
+.topic-name{font-size:12px;font-weight:600}
+.topic-count{font-size:11px;color:var(--muted)}
+.topic-sentiment{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+.sent-neg{background:#fee2e2;color:#991b1b}
+.sent-pos{background:#d1fae5;color:#065f46}
+.sent-neu{background:#f3f4f6;color:#374151}
+
+/* ─── RATING STARS ─── */
+.stars{color:#fbbf24;font-size:14px;letter-spacing:2px}
+
+/* ─── TABLE ─── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+td{font-size:12px;padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+tr:hover td{background:#f9fafb}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px}
+.tag-red{background:#fee2e2;color:#991b1b}
+.tag-green{background:#d1fae5;color:#065f46}
+.tag-blue{background:#dbeafe;color:#1e40af}
+.tag-yellow{background:#fef3c7;color:#92400e}
+
+/* ─── BHI ─── */
+.bhi-big{
+  display:flex;align-items:center;flex-direction:column;
+  padding:28px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);
+  border-radius:var(--radius);border:1px solid #bfdbfe;margin-bottom:20px;
+}
+.bhi-ring{
+  width:110px;height:110px;border-radius:50%;
+  background:conic-gradient(var(--blue) 0% 58%, #e5e9f2 58% 100%);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;margin-bottom:14px;
+}
+.bhi-ring::after{
+  content:'';position:absolute;width:80px;height:80px;
+  background:#fff;border-radius:50%;
+}
+.bhi-val{position:relative;z-index:1;font-size:26px;font-weight:800;color:var(--blue)}
+.bhi-label{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px}
+.bhi-desc{font-size:11px;color:#6b7280;text-align:center;line-height:1.5}
+.bhi-breakdown{width:100%;margin-top:16px}
+.bhi-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid #e5e9f2}
+.bhi-row:last-child{border-bottom:none}
+.bhi-row .name{color:#6b7280}
+.bhi-row .score{font-weight:700;color:var(--blue)}
+
+/* ─── VELOCITY ─── */
+.velocity-levels{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.v-level{
+  flex:1;padding:8px;border-radius:8px;text-align:center;
+  font-size:10px;font-weight:700;border:2px solid transparent;
+}
+.v-level.active-level{border-color:currentColor;background:rgba(0,0,0,.04)}
+.v-normal{color:#16a34a;background:#f0fdf4}
+.v-modere{color:#d97706;background:#fffbeb}
+.v-eleve{color:#ea580c;background:#fff7ed}
+.v-critique{color:#dc2626;background:#fef2f2}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+
+/* ─── ANIMATE ─── */
+.card{animation:fadeup .4s ease both}
+@keyframes fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}
+.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}
+.kpi:nth-child(5){animation-delay:.25s}.kpi:nth-child(6){animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<!-- ─── TOPBAR ─── -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-badge">📊</div>
+    <div>
+      <div class="logo-text">IKEA <span>Brand Intelligence</span></div>
+      <div class="logo-sub">BDD Eugenia × Licter 2026</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+    <div class="bhi-topbar">
+      <div class="val" id="bhi-top">58</div>
+      <div class="lbl">Brand Health Index</div>
+    </div>
+    <div class="btn-alert">🚨 Crise Active — Meubles Contaminés</div>
+  </div>
+</div>
+
+<!-- ─── CRISIS BANNER ─── -->
+<div class="crisis-banner">
+  <div class="left">
+    <div class="crisis-badge">🔴 NIVEAU ÉLEVÉ</div>
+    <div class="crisis-text">
+      <strong>Crise "Meubles Contaminés" — Active depuis 15 jours</strong>
+      <span>800 Crisis Alerts · 2 517 likes/post · Pic estimé dans 24h</span>
+    </div>
+  </div>
+  <div class="crisis-meter">
+    <span style="opacity:.8;font-size:11px">Probabilité d'explosion médias</span>
+    <div class="meter-bar"><div class="meter-fill"></div></div>
+    <strong>78%</strong>
+  </div>
+</div>
+
+<!-- ─── WRAPPER ─── -->
+<div class="wrapper">
+
+<!-- KPIs -->
+<div class="kpis">
+  <div class="kpi" style="--accent:#ef4444">
+    <div class="icon">🚨</div>
+    <div class="val" id="kpi-alerts">0</div>
+    <div class="lbl">Crisis Alerts</div>
+    <div class="delta down">↑ +340% en 24h</div>
+  </div>
+  <div class="kpi" style="--accent:#f97316">
+    <div class="icon">❤️</div>
+    <div class="val" id="kpi-likes">0</div>
+    <div class="lbl">Likes moy. / post</div>
+    <div class="delta warn">⚠ Impact viral</div>
+  </div>
+  <div class="kpi" style="--accent:#2563eb">
+    <div class="icon">💬</div>
+    <div class="val" id="kpi-mentions">0</div>
+    <div class="lbl">Mentions totales</div>
+    <div class="delta down">↑ +22% cette semaine</div>
+  </div>
+  <div class="kpi" style="--accent:#22c55e">
+    <div class="icon">⭐</div>
+    <div class="val" id="kpi-rating">0</div>
+    <div class="lbl">Rating moyen</div>
+    <div class="delta down">↓ -0.4 ce mois</div>
+  </div>
+  <div class="kpi" style="--accent:#7c3aed">
+    <div class="icon">📊</div>
+    <div class="val" id="kpi-sov">0%</div>
+    <div class="lbl">Share of Voice</div>
+    <div class="delta up">= Stable vs L.Merlin</div>
+  </div>
+  <div class="kpi" style="--accent:#f59e0b">
+    <div class="icon">💰</div>
+    <div class="val">1.08M€</div>
+    <div class="lbl">CA menacé estimé</div>
+    <div class="delta down">↑ Agir maintenant</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('reputation')">🔴 Réputation & Crise</button>
+  <button class="tab" onclick="switchTab('benchmark')">🔵 Benchmark Marché</button>
+  <button class="tab" onclick="switchTab('cx')">🟡 Voix du Client</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     VUE 1 — RÉPUTATION & CRISE
+════════════════════════════════════════ -->
+<div class="view active" id="view-reputation">
+
+  <div class="grid-3-1">
+    <!-- Timeline -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📈 Volume de Mentions — Timeline Crise</div>
+        <div class="card-badge" style="background:#fee2e2;color:#991b1b">24 fév → aujourd'hui</div>
+      </div>
+      <div class="chart-wrap-lg"><canvas id="timelineChart"></canvas></div>
+    </div>
+    <!-- Prediction -->
+    <div>
+      <div class="predict-score">
+        <div class="predict-circle">
+          <div class="predict-pct">78%</div>
+          <div class="predict-pct-lbl">explosion</div>
+        </div>
+        <div class="predict-title">🔮 Predictive Crisis Score</div>
+        <div class="predict-sub">Pic estimé dans <strong>24 heures</strong><br>Velocity : 5.2× la normale</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚡ Niveaux Velocity</div>
+        </div>
+        <div style="font-size:28px;font-weight:800;color:#ea580c;margin-bottom:4px">5.2×</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:12px">mentions J-1 ÷ moyenne 7 jours</div>
+        <div class="velocity-levels">
+          <div class="v-level v-normal">NORMAL<br>&lt;2×</div>
+          <div class="v-level v-modere">MODÉRÉ<br>2-3×</div>
+          <div class="v-level v-eleve active-level">ÉLEVÉ<br>3-6×</div>
+          <div class="v-level v-critique">CRITIQUE<br>&gt;6×</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <!-- Plateforme -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📱 Mentions par Plateforme</div>
+      </div>
+      <div class="chart-wrap"><canvas id="platformChart"></canvas></div>
+    </div>
+    <!-- Sentiment -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">💬 Distribution Sentiment</div>
+        <div class="card-badge" style="background:#fee2e2;color:#b91c1c">100% Crisis = Négatif</div>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="sentimentCrisisChart"></canvas></div>
+      <div style="margin-top:16px">
+        <div class="sent-row">
+          <div class="sent-dot" style="background:#ef4444"></div>
+          <div class="sent-label">Négatif</div>
+          <div class="sent-bar-wrap"><div class="sent-bar" style="background:#ef4444;width:72%"></div></div>
+          <div class="sent-pct">72%</div>
+        </div>
+        <div class="sent-row">
+          <div class="sent-dot" style="background:#9ca3af"></div>
+          <div class="sent-label">Neutre</div>
+          <div class="sent-bar-wrap"><div class="sent-bar" style="background:#9ca3af;width:19%"></div></div>
+          <div class="sent-pct">19%</div>
+        </div>
+        <div class="sent-row">
+          <div class="sent-dot" style="background:#22c55e"></div>
+          <div class="sent-label">Positif</div>
+          <div class="sent-bar-wrap"><div class="sent-bar" style="background:#22c55e;width:9%"></div></div>
+          <div class="sent-pct">9%</div>
+        </div>
+      </div>
+    </div>
+    <!-- Top Posts Viraux -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔥 Top Posts Viraux</div>
+      </div>
+      <div class="alert-feed">
+        <div class="alert-item negative">
+          <div class="alert-meta">
+            <span class="platform-tag">TikTok</span>
+            <span class="likes-tag">❤️ 34 686</span>
+          </div>
+          <div class="alert-text">"Mon meuble IKEA m'a rendu malade, odeur chimique insupportable depuis 3 semaines..."</div>
+        </div>
+        <div class="alert-item negative">
+          <div class="alert-meta">
+            <span class="platform-tag">Reddit</span>
+            <span class="likes-tag">❤️ 12 443</span>
+          </div>
+          <div class="alert-text">"Thread: Les meubles IKEA série KALLAX contiennent des COV dangereux selon test labo"</div>
+        </div>
+        <div class="alert-item negative">
+          <div class="alert-meta">
+            <span class="platform-tag">Twitter/X</span>
+            <span class="likes-tag">❤️ 8 921</span>
+          </div>
+          <div class="alert-text">"@IKEA_France votre meuble m'a causé des maux de tête depuis l'installation, 0 réponse de votre SAV"</div>
+        </div>
+        <div class="alert-item negative">
+          <div class="alert-meta">
+            <span class="platform-tag">Facebook</span>
+            <span class="likes-tag">❤️ 5 234</span>
+          </div>
+          <div class="alert-text">"Alerte ! Plusieurs personnes dans mon quartier ont eu la même réaction avec les meubles IKEA"</div>
+        </div>
+        <div class="alert-item negative">
+          <div class="alert-meta">
+            <span class="platform-tag">TikTok</span>
+            <span class="likes-tag">❤️ 4 109</span>
+          </div>
+          <div class="alert-text">"POV: tu rentres chez toi et tu réalises que l'odeur de ton appart vient du meuble IKEA 😨"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playbook -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <div class="card-title">📋 Smart Playbook — Plan d'Action H+0 à J+7</div>
+      <div class="card-badge" style="background:#f5f3ff;color:#7c3aed">Généré par IA · Niveau ÉLEVÉ</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
+      <div style="background:#fef2f2;border-radius:8px;padding:14px;border-left:3px solid #ef4444">
+        <div style="font-size:10px;font-weight:700;color:#ef4444;margin-bottom:6px">H+0</div>
+        <div style="font-size:12px;font-weight:600;color:#111">Alerte COMEX</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">DirCom + Directeur Qualité + CEO</div>
+      </div>
+      <div style="background:#fff7ed;border-radius:8px;padding:14px;border-left:3px solid #f97316">
+        <div style="font-size:10px;font-weight:700;color:#f97316;margin-bottom:6px">H+2</div>
+        <div style="font-size:12px;font-weight:600;color:#111">Réponse publique</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">Top 10 posts viraux avec réponse IA</div>
+      </div>
+      <div style="background:#fffbeb;border-radius:8px;padding:14px;border-left:3px solid #f59e0b">
+        <div style="font-size:10px;font-weight:700;color:#f59e0b;margin-bottom:6px">H+6</div>
+        <div style="font-size:12px;font-weight:600;color:#111">Communiqué interne</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">Points de vente + équipes SAV alertés</div>
+      </div>
+      <div style="background:#eff6ff;border-radius:8px;padding:14px;border-left:3px solid #3b82f6">
+        <div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:6px">H+24</div>
+        <div style="font-size:12px;font-weight:600;color:#111">FAQ dédiée</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">Page créée sur ikea.fr avec procédure</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:14px;border-left:3px solid #22c55e">
+        <div style="font-size:10px;font-weight:700;color:#16a34a;margin-bottom:6px">H+48</div>
+        <div style="font-size:12px;font-weight:600;color:#111">Bilan sentiment</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">Si pas d'amélioration → rappel produit</div>
+      </div>
+      <div style="background:#f5f3ff;border-radius:8px;padding:14px;border-left:3px solid #8b5cf6">
+        <div style="font-size:10px;font-weight:700;color:#7c3aed;margin-bottom:6px">J+7</div>
+        <div style="font-size:12px;font-weight:600;color:#111">Rapport de crise</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">Impact + mesures correctives + KPIs</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     VUE 2 — BENCHMARK
+════════════════════════════════════════ -->
+<div class="view" id="view-benchmark">
+
+  <div class="grid-1-2">
+    <!-- BHI + SOV -->
+    <div>
+      <div class="bhi-big">
+        <div class="bhi-ring"><div class="bhi-val">58</div></div>
+        <div class="bhi-label">Brand Health Index™</div>
+        <div class="bhi-desc">Score composite propriétaire<br>Sentiment CX + Réputation + SOV</div>
+        <div class="bhi-breakdown">
+          <div class="bhi-row"><span class="name">Sentiment Client CX (40%)</span><span class="score">45/100</span></div>
+          <div class="bhi-row"><span class="name">Score Réputation (30%)</span><span class="score">62/100</span></div>
+          <div class="bhi-row"><span class="name">Share of Voice (30%)</span><span class="score">55/100</span></div>
+        </div>
+      </div>
+      <!-- Competitor SOV -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 Share of Voice</div>
+        </div>
+        <div class="competitor-row">
+          <div class="comp-name" style="color:#2563eb">IKEA</div>
+          <div class="comp-bar-wrap"><div class="comp-bar" style="background:#2563eb;width:55%"></div></div>
+          <div class="comp-pct" style="color:#2563eb">55%</div>
+        </div>
+        <div class="competitor-row">
+          <div class="comp-name" style="color:#ea580c">Leroy Merlin</div>
+          <div class="comp-bar-wrap"><div class="comp-bar" style="background:#ea580c;width:45%"></div></div>
+          <div class="comp-pct" style="color:#ea580c">45%</div>
+        </div>
+        <div style="font-size:11px;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">
+          ⚠️ Leroy Merlin gagne +8% depuis la crise IKEA
+        </div>
+      </div>
+    </div>
+
+    <!-- Sentiment comparatif par topic -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🎯 Sentiment Comparatif par Topic</div>
+        <div class="card-badge" style="background:#eff6ff;color:#1d4ed8">IKEA vs Leroy Merlin</div>
+      </div>
+      <div class="chart-wrap-lg"><canvas id="benchmarkChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Matrice positionnement -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📍 Matrice de Positionnement</div>
+        <div style="font-size:11px;color:#6b7280">Volume × Sentiment</div>
+      </div>
+      <div class="chart-wrap-lg"><canvas id="positionChart"></canvas></div>
+    </div>
+    <!-- Opportunité concurrent -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🎯 Opportunité Concurrentielle</div>
+        <div class="card-badge" style="background:#fff7ed;color:#c2410c">Leroy Merlin peut agir</div>
+      </div>
+      <div style="background:#fff7ed;border-radius:10px;padding:16px;margin-bottom:14px;border:1px solid #fed7aa">
+        <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:8px">🚀 Fenêtre d'opportunité : 48-72h</div>
+        <div style="font-size:12px;color:#374151;line-height:1.7">
+          IKEA en crise sur <strong>Qualité Produit</strong> (+340% mentions négatives)<br>
+          → Pousser campagne "Qualité Garantie Leroy Merlin"<br>
+          → Ads sur keywords "meuble solide" et "garantie meubles"<br>
+          → Budget recommandé : +30% ce weekend
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Topic IKEA</th><th>Sentiment</th><th>Opp. L.Merlin</th></tr>
+          <tr><td>Qualité Produit</td><td><span class="tag tag-red">Négatif 81%</span></td><td><span class="tag tag-green">Forte ✓</span></td></tr>
+          <tr><td>SAV</td><td><span class="tag tag-red">Négatif 76%</span></td><td><span class="tag tag-green">Forte ✓</span></td></tr>
+          <tr><td>Livraison</td><td><span class="tag tag-yellow">Mixte 54%</span></td><td><span class="tag tag-yellow">Moyenne</span></td></tr>
+          <tr><td>Prix</td><td><span class="tag tag-green">Positif 68%</span></td><td><span class="tag tag-blue">Neutre</span></td></tr>
+          <tr><td>Disponibilité</td><td><span class="tag tag-yellow">Mixte 48%</span></td><td><span class="tag tag-yellow">Moyenne</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     VUE 3 — VOIX DU CLIENT CX
+════════════════════════════════════════ -->
+<div class="view" id="view-cx">
+
+  <div class="grid-3">
+    <!-- Rating evolution -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">⭐ Évolution du Rating</div>
+        <div style="text-align:center">
+          <div style="font-size:32px;font-weight:800;color:#f59e0b">3.19</div>
+          <div class="stars">★★★☆☆</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">Sur 5 · 1 575 avis</div>
+        </div>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="ratingChart"></canvas></div>
+    </div>
+    <!-- Top irritants -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">😤 Top Irritants Clients</div>
+        <div class="card-badge" style="background:#fee2e2;color:#991b1b">Négatif</div>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">⚠️ SAV non réactif</div><div class="topic-count">312 mentions</div></div>
+        <span class="topic-sentiment sent-neg">81% négatif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">📦 Livraison en retard</div><div class="topic-count">287 mentions</div></div>
+        <span class="topic-sentiment sent-neg">76% négatif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">🔧 Instructions montage</div><div class="topic-count">198 mentions</div></div>
+        <span class="topic-sentiment sent-neg">68% négatif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">❌ Produit endommagé</div><div class="topic-count">156 mentions</div></div>
+        <span class="topic-sentiment sent-neg">91% négatif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">🏬 Rupture stock magasin</div><div class="topic-count">134 mentions</div></div>
+        <span class="topic-sentiment sent-neg">65% négatif</span>
+      </div>
+    </div>
+    <!-- Top enchantements -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">😍 Top Enchantements Clients</div>
+        <div class="card-badge" style="background:#d1fae5;color:#065f46">Positif</div>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">💰 Rapport qualité/prix</div><div class="topic-count">421 mentions</div></div>
+        <span class="topic-sentiment sent-pos">89% positif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">🎨 Design & esthétique</div><div class="topic-count">389 mentions</div></div>
+        <span class="topic-sentiment sent-pos">84% positif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">🏪 Expérience en magasin</div><div class="topic-count">267 mentions</div></div>
+        <span class="topic-sentiment sent-pos">76% positif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">📱 Application mobile</div><div class="topic-count">189 mentions</div></div>
+        <span class="topic-sentiment sent-pos">71% positif</span>
+      </div>
+      <div class="topic-item">
+        <div><div class="topic-name">🛍️ Variété des produits</div><div class="topic-count">178 mentions</div></div>
+        <span class="topic-sentiment sent-pos">79% positif</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Sentiment CX -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">💬 Sentiment Global CX — 1 575 Avis</div>
+      </div>
+      <div class="chart-wrap"><canvas id="sentimentCXChart"></canvas></div>
+    </div>
+    <!-- Distribution par plateforme CX -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📱 Avis par Plateforme CX</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cxPlatformChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Journey map -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🗺️ Parcours Client — Points de Friction</div>
+      <div style="font-size:11px;color:#6b7280">Score sentiment à chaque étape</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px">
+      <div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+        <div style="font-size:22px;margin-bottom:6px">🛍️</div>
+        <div style="font-size:12px;font-weight:700;color:#111">Achat en ligne</div>
+        <div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:6px">4.1★</div>
+        <div style="font-size:10px;color:#16a34a;font-weight:600">Positif ✓</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a">
+        <div style="font-size:22px;margin-bottom:6px">📦</div>
+        <div style="font-size:12px;font-weight:700;color:#111">Livraison</div>
+        <div style="font-size:20px;font-weight:800;color:#d97706;margin-top:6px">2.8★</div>
+        <div style="font-size:10px;color:#d97706;font-weight:600">⚠ Point de friction</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#fee2e2;border-radius:8px;border:1px solid #fecaca">
+        <div style="font-size:22px;margin-bottom:6px">🔧</div>
+        <div style="font-size:12px;font-weight:700;color:#111">Montage</div>
+        <div style="font-size:20px;font-weight:800;color:#dc2626;margin-top:6px">2.4★</div>
+        <div style="font-size:10px;color:#dc2626;font-weight:600">🔴 Critique</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#fee2e2;border-radius:8px;border:1px solid #fecaca">
+        <div style="font-size:22px;margin-bottom:6px">📞</div>
+        <div style="font-size:12px;font-weight:700;color:#111">SAV</div>
+        <div style="font-size:20px;font-weight:800;color:#dc2626;margin-top:6px">1.9★</div>
+        <div style="font-size:10px;color:#dc2626;font-weight:600">🔴 Urgent</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">
+        <div style="font-size:22px;margin-bottom:6px">🔄</div>
+        <div style="font-size:12px;font-weight:700;color:#111">Fidélisation</div>
+        <div style="font-size:20px;font-weight:800;color:#16a34a;margin-top:6px">3.8★</div>
+        <div style="font-size:10px;color:#16a34a;font-weight:600">Positif ✓</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end wrapper -->
+
+<script>
+// ─── CONFIG SUPABASE ───────────────────────────────────────────
+// Remplace par tes vraies credentials pour connecter les données réelles
+const SUPABASE_URL = 'https://poyqbtjtziypzuyjybtk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBveXFidGp0eml5cHp1eWp5YnRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjU0MDAsImV4cCI6MjA4OTQwMTQwMH0._crpKijnR3XnCC7zPSUeG8lwi8qIJp5A1GP4OVVgzAQ';
+const USE_MOCK = true; // passe à false après injection pour utiliser les vraies données
+
+// ─── MOCK DATA ─────────────────────────────────────────────────
+const mock = {
+  timeline: {
+    labels: ['24 fév','25 fév','26 fév','27 fév','28 fév','01 mar','02 mar','03 mar','04 mar','05 mar','06 mar','07 mar','08 mar','09 mar','10 mar','11 mar'],
+    crisis: [12,18,24,31,45,67,89,124,156,187,210,243,289,312,340,380],
+    normal: [28,30,27,32,29,31,28,27,30,29,28,32,31,29,30,28]
+  },
+  platforms: { labels:['Twitter/X','Reddit','TikTok','Facebook','Google Maps'], values:[280,198,167,112,43] },
+  sentiment_crisis: { neg:72, neu:19, pos:9 },
+  benchmark_topics: {
+    labels:['SAV','Livraison','Qualité','Prix','Disponibilité','Design'],
+    ikea:[24,34,19,72,44,81],
+    leroy:[68,61,74,58,66,69]
+  },
+  rating_evolution: {
+    labels:['Oct','Nov','Déc','Jan','Fév','Mar'],
+    values:[3.6,3.5,3.4,3.3,3.2,3.19]
+  },
+  cx_sentiment: { pos:41, neu:24, neg:35 },
+  cx_platforms: { labels:['Trustpilot','Google Maps','App Store','Avis Vérifiés'], values:[680,490,248,157] }
+};
+
+// ─── ANIMATED COUNTERS ─────────────────────────────────────────
+function animateVal(id, target, suffix='', decimals=0){
+  const el = document.getElementById(id);
+  if(!el) return;
+  let start = 0; const dur = 1200;
+  const step = timestamp => {
+    if(!start) start = timestamp;
+    const p = Math.min((timestamp - start) / dur, 1);
+    const v = p * target;
+    el.textContent = decimals ? v.toFixed(decimals) + suffix : Math.floor(v) + suffix;
+    if(p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+window.addEventListener('load', () => {
+  animateVal('kpi-alerts', 800);
+  animateVal('kpi-likes', 2517);
+  animateVal('kpi-mentions', 5250);
+  animateVal('kpi-rating', 3.19, '', 2);
+  animateVal('kpi-sov', 55, '%');
+  animateVal('bhi-top', 58);
+});
+
+// ─── TABS ──────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const views = ['reputation','benchmark','cx'];
+    t.classList.toggle('active', views[i] === name);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  setTimeout(initCharts, 50);
+}
+
+// ─── CHART DEFAULTS ────────────────────────────────────────────
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6b7280';
+Chart.defaults.plugins.legend.labels.boxWidth = 10;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+let chartsInit = false;
+function initCharts(){
+  if(chartsInit) return;
+  chartsInit = true;
+
+  // TIMELINE
+  new Chart(document.getElementById('timelineChart'), {
+    type:'line',
+    data:{
+      labels: mock.timeline.labels,
+      datasets:[{
+        label:'Mentions Crise',
+        data: mock.timeline.crisis,
+        borderColor:'#ef4444',
+        backgroundColor:'rgba(239,68,68,.08)',
+        tension:.4, fill:true, pointRadius:3, pointHoverRadius:6,
+        borderWidth:2.5
+      },{
+        label:'Mentions Normales',
+        data: mock.timeline.normal,
+        borderColor:'#d1d5db',
+        backgroundColor:'transparent',
+        tension:.4, borderDash:[4,4], pointRadius:0, borderWidth:1.5
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top'},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        y:{grid:{color:'#f3f4f6'},beginAtZero:true},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // PLATFORM DONUT
+  new Chart(document.getElementById('platformChart'), {
+    type:'doughnut',
+    data:{
+      labels: mock.platforms.labels,
+      datasets:[{
+        data: mock.platforms.values,
+        backgroundColor:['#3b82f6','#f97316','#ec4899','#8b5cf6','#22c55e'],
+        borderWidth:0, hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{
+        legend:{position:'right'},
+        tooltip:{callbacks:{label: c => `${c.label}: ${c.raw} mentions`}}
+      }
+    }
+  });
+
+  // SENTIMENT CRISIS
+  new Chart(document.getElementById('sentimentCrisisChart'), {
+    type:'doughnut',
+    data:{
+      labels:['Négatif','Neutre','Positif'],
+      datasets:[{
+        data:[72,19,9],
+        backgroundColor:['#ef4444','#9ca3af','#22c55e'],
+        borderWidth:0, hoverOffset:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'70%',
+      plugins:{legend:{display:false}}
+    }
+  });
+
+  // BENCHMARK BAR
+  new Chart(document.getElementById('benchmarkChart'), {
+    type:'bar',
+    data:{
+      labels: mock.benchmark_topics.labels,
+      datasets:[{
+        label:'IKEA',
+        data: mock.benchmark_topics.ikea,
+        backgroundColor:'rgba(37,99,235,.85)',
+        borderRadius:4, borderSkipped:false
+      },{
+        label:'Leroy Merlin',
+        data: mock.benchmark_topics.leroy,
+        backgroundColor:'rgba(234,88,12,.85)',
+        borderRadius:4, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top'},
+        tooltip:{callbacks:{label: c => `${c.dataset.label}: ${c.raw}% positif`}}
+      },
+      scales:{
+        y:{max:100,grid:{color:'#f3f4f6'},ticks:{callback:v=>v+'%'}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // POSITION BUBBLE
+  new Chart(document.getElementById('positionChart'), {
+    type:'bubble',
+    data:{
+      datasets:[
+        {label:'IKEA — SAV',data:[{x:76,y:24,r:18}],backgroundColor:'rgba(239,68,68,.7)'},
+        {label:'IKEA — Qualité',data:[{x:45,y:19,r:14}],backgroundColor:'rgba(239,68,68,.5)'},
+        {label:'IKEA — Prix',data:[{x:60,y:72,r:12}],backgroundColor:'rgba(37,99,235,.6)'},
+        {label:'L.M. — SAV',data:[{x:52,y:68,r:13}],backgroundColor:'rgba(234,88,12,.7)'},
+        {label:'L.M. — Qualité',data:[{x:48,y:74,r:15}],backgroundColor:'rgba(234,88,12,.5)'},
+        {label:'IKEA — Design',data:[{x:55,y:81,r:10}],backgroundColor:'rgba(37,99,235,.7)'},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:10}}}},
+      scales:{
+        x:{title:{display:true,text:'Volume de mentions →'},grid:{color:'#f3f4f6'},min:0,max:100},
+        y:{title:{display:true,text:'↑ Sentiment positif (%)'},grid:{color:'#f3f4f6'},min:0,max:100,
+          afterDrawPlugin:{id:'midline'}}
+      }
+    }
+  });
+
+  // RATING LINE
+  new Chart(document.getElementById('ratingChart'), {
+    type:'line',
+    data:{
+      labels: mock.rating_evolution.labels,
+      datasets:[{
+        data: mock.rating_evolution.values,
+        borderColor:'#f59e0b',
+        backgroundColor:'rgba(245,158,11,.1)',
+        tension:.4, fill:true, pointRadius:4,
+        borderWidth:2.5
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{min:1,max:5,grid:{color:'#f3f4f6'},ticks:{callback:v=>v+'★'}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // SENTIMENT CX
+  new Chart(document.getElementById('sentimentCXChart'), {
+    type:'bar',
+    data:{
+      labels:['Positif','Neutre','Négatif'],
+      datasets:[{
+        data:[41,24,35],
+        backgroundColor:['#22c55e','#9ca3af','#ef4444'],
+        borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.raw}% des avis`}}},
+      scales:{
+        x:{max:100,grid:{color:'#f3f4f6'},ticks:{callback:v=>v+'%'}},
+        y:{grid:{display:false}}
+      }
+    }
+  });
+
+  // CX PLATFORM
+  new Chart(document.getElementById('cxPlatformChart'), {
+    type:'bar',
+    data:{
+      labels: mock.cx_platforms.labels,
+      datasets:[{
+        data: mock.cx_platforms.values,
+        backgroundColor:['#3b82f6','#22c55e','#f97316','#8b5cf6'],
+        borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{grid:{color:'#f3f4f6'},beginAtZero:true},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+
+// Init on load
+window.addEventListener('load', () => setTimeout(initCharts, 100));
+</script>
+</body>
+</html>
