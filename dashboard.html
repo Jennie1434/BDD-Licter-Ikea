@@ -963,8 +963,11 @@ function initCharts(){
         tension:.4, fill:true, pointRadius:3, pointHoverRadius:6,
         borderWidth:2.5
       },{
-        label:'Mentions Normales',
-        data: mock.timeline.normal,
+        label:'Moyenne 7j',
+        data: d.timeline.crisis.map((_,i,arr) => {
+          const slice = arr.slice(Math.max(0,i-6), i+1);
+          return Math.round(slice.reduce((a,b)=>a+b,0)/slice.length);
+        }),
         borderColor:'#d1d5db',
         backgroundColor:'transparent',
         tension:.4, borderDash:[4,4], pointRadius:0, borderWidth:1.5
@@ -1029,7 +1032,7 @@ function initCharts(){
         borderRadius:4, borderSkipped:false
       },{
         label:'Leroy Merlin',
-        data: mock.benchmark_topics.leroy,
+        data: [41,58,52,55,61,48],
         backgroundColor:'rgba(234,88,12,.85)',
         borderRadius:4, borderSkipped:false
       }]
