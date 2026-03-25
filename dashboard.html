@@ -6,6 +6,7 @@
 <title>IKEA Brand Intelligence Platform</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ─── RESET & BASE ─── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -731,29 +732,7 @@ tr:hover td{background:#f9fafb}
 // Remplace par tes vraies credentials pour connecter les données réelles
 const SUPABASE_URL = 'https://poyqbtjtziypzuyjybtk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBveXFidGp0eml5cHp1eWp5YnRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjU0MDAsImV4cCI6MjA4OTQwMTQwMH0._crpKijnR3XnCC7zPSUeG8lwi8qIJp5A1GP4OVVgzAQ';
-const USE_MOCK = true; // passe à false après injection pour utiliser les vraies données
-
-// ─── MOCK DATA ─────────────────────────────────────────────────
-const mock = {
-  timeline: {
-    labels: ['24 fév','25 fév','26 fév','27 fév','28 fév','01 mar','02 mar','03 mar','04 mar','05 mar','06 mar','07 mar','08 mar','09 mar','10 mar','11 mar'],
-    crisis: [12,18,24,31,45,67,89,124,156,187,210,243,289,312,340,380],
-    normal: [28,30,27,32,29,31,28,27,30,29,28,32,31,29,30,28]
-  },
-  platforms: { labels:['Twitter/X','Reddit','TikTok','Facebook','Google Maps'], values:[280,198,167,112,43] },
-  sentiment_crisis: { neg:72, neu:19, pos:9 },
-  benchmark_topics: {
-    labels:['SAV','Livraison','Qualité','Prix','Disponibilité','Design'],
-    ikea:[24,34,19,72,44,81],
-    leroy:[68,61,74,58,66,69]
-  },
-  rating_evolution: {
-    labels:['Oct','Nov','Déc','Jan','Fév','Mar'],
-    values:[3.6,3.5,3.4,3.3,3.2,3.19]
-  },
-  cx_sentiment: { pos:41, neu:24, neg:35 },
-  cx_platforms: { labels:['Trustpilot','Google Maps','App Store','Avis Vérifiés'], values:[680,490,248,157] }
-};
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── ANIMATED COUNTERS ─────────────────────────────────────────
 function animateVal(id, target, suffix='', decimals=0){
@@ -769,14 +748,160 @@ function animateVal(id, target, suffix='', decimals=0){
   };
   requestAnimationFrame(step);
 }
-window.addEventListener('load', () => {
+
+// ─── FETCH REAL DATA ───────────────────────────────────────────
+async function loadRealData() {
+  try {
+    // KPIs depuis reputation_crise
+    const { data: crisis } = await sb.from('reputation_crise').select('platform, likes, sentiment, date');
+    const { data: cx } = await sb.from('voix_client_cx').select('platform, rating, sentiment, category, date');
+    const { data: bench } = await sb.from('benchmark_marche').select('entity_analyzed, topic, sentiment_detected, platform');
+
+    if (!crisis || !cx || !bench) throw new Error('Données vides');
+
+    // KPI — Crisis Alerts
+    const crisisAlerts = crisis.filter(r => r.sentiment === 'Negative').length;
+    const avgLikes = Math.round(crisis.reduce((s,r) => s + (r.likes||0), 0) / crisis.length);
+    const totalMentions = crisis.length + cx.length + bench.length;
+
+    // Rating moyen
+    const ratings = cx.filter(r => r.rating > 0).map(r => r.rating);
+    const avgRating = ratings.length ? (ratings.reduce((a,b) => a+b, 0) / ratings.length) : 0;
+
+    // SOV — IKEA vs Leroy Merlin
+    const ikea = bench.filter(r => r.entity_analyzed?.toLowerCase().includes('ikea')).length;
+    const leroy = bench.filter(r => r.entity_analyzed?.toLowerCase().includes('leroy')).length;
+    const sov = ikea + leroy > 0 ? Math.round((ikea / (ikea + leroy)) * 100) : 55;
+
+    // BHI
+    const cxPos = cx.filter(r => r.sentiment === 'Positive').length;
+    const cxTotal = cx.length;
+    const cxScore = cxTotal ? Math.round((cxPos / cxTotal) * 100) : 45;
+    const crisisNeg = crisis.filter(r => r.sentiment === 'Negative').length;
+    const repScore = crisis.length ? Math.round(100 - (crisisNeg / crisis.length) * 100) : 62;
+    const bhi = Math.round(0.4 * cxScore + 0.3 * repScore + 0.3 * sov);
+
+    // Animate KPIs
+    animateVal('kpi-alerts', crisisAlerts);
+    animateVal('kpi-likes', avgLikes);
+    animateVal('kpi-mentions', totalMentions);
+    animateVal('kpi-rating', avgRating, '', 2);
+    animateVal('kpi-sov', sov, '%');
+    animateVal('bhi-top', bhi);
+
+    // Update BHI ring
+    document.querySelector('.bhi-val').textContent = bhi;
+    document.querySelector('.bhi-ring').style.background =
+      `conic-gradient(#2563eb 0% ${bhi}%, #e5e9f2 ${bhi}% 100%)`;
+    document.querySelectorAll('.bhi-row .score')[0].textContent = cxScore + '/100';
+    document.querySelectorAll('.bhi-row .score')[1].textContent = repScore + '/100';
+    document.querySelectorAll('.bhi-row .score')[2].textContent = sov + '/100';
+
+    // ─ Timeline par jour
+    const byDate = {};
+    crisis.forEach(r => {
+      const d = r.date ? r.date.substring(0,10) : null;
+      if(d) byDate[d] = (byDate[d]||0) + 1;
+    });
+    const sortedDates = Object.keys(byDate).sort();
+    const timelineLabels = sortedDates.map(d => {
+      const dt = new Date(d);
+      return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+    });
+    const timelineCrisis = sortedDates.map(d => byDate[d]);
+
+    // ─ Plateformes crisis
+    const platCount = {};
+    crisis.forEach(r => { if(r.platform) platCount[r.platform] = (platCount[r.platform]||0)+1; });
+    const platSorted = Object.entries(platCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    // ─ Sentiment crisis
+    const sentCount = {Positive:0, Negative:0, Neutral:0};
+    crisis.forEach(r => { if(r.sentiment) sentCount[r.sentiment]++; });
+    const total = crisis.length;
+    const negPct = Math.round((sentCount.Negative/total)*100);
+    const neuPct = Math.round((sentCount.Neutral/total)*100);
+    const posPct = 100 - negPct - neuPct;
+
+    // Update sentiment bars
+    const bars = document.querySelectorAll('.sent-bar');
+    const pcts = document.querySelectorAll('.sent-pct');
+    if(bars[0]){ bars[0].style.width = negPct+'%'; pcts[0].textContent = negPct+'%'; }
+    if(bars[1]){ bars[1].style.width = neuPct+'%'; pcts[1].textContent = neuPct+'%'; }
+    if(bars[2]){ bars[2].style.width = posPct+'%'; pcts[2].textContent = posPct+'%'; }
+
+    // ─ Benchmark SOV
+    document.querySelectorAll('.comp-bar')[0].style.width = sov+'%';
+    document.querySelectorAll('.comp-pct')[0].textContent = sov+'%';
+    document.querySelectorAll('.comp-bar')[1].style.width = (100-sov)+'%';
+    document.querySelectorAll('.comp-pct')[1].textContent = (100-sov)+'%';
+
+    // ─ Rating CX
+    const avgR = parseFloat(avgRating.toFixed(2));
+    document.querySelector('.stars').textContent = '★'.repeat(Math.round(avgR)) + '☆'.repeat(5-Math.round(avgR));
+
+    // Rating par mois
+    const byMonth = {};
+    cx.filter(r=>r.rating>0&&r.date).forEach(r=>{
+      const m = r.date.substring(0,7);
+      if(!byMonth[m]) byMonth[m]={sum:0,count:0};
+      byMonth[m].sum += r.rating; byMonth[m].count++;
+    });
+    const months = Object.keys(byMonth).sort().slice(-6);
+    const ratingLabels = months.map(m => new Date(m+'-01').toLocaleDateString('fr-FR',{month:'short'}));
+    const ratingVals = months.map(m => parseFloat((byMonth[m].sum/byMonth[m].count).toFixed(2)));
+
+    // ─ Sentiment CX
+    const cxSentCount = {Positive:0,Negative:0,Neutral:0};
+    cx.forEach(r=>{ if(r.sentiment) cxSentCount[r.sentiment]++; });
+    const cxTot = cx.length;
+    const cxPosPct = Math.round((cxSentCount.Positive/cxTot)*100);
+    const cxNeuPct = Math.round((cxSentCount.Neutral/cxTot)*100);
+    const cxNegPct = 100-cxPosPct-cxNeuPct;
+
+    // ─ Plateformes CX
+    const cxPlat = {};
+    cx.forEach(r=>{ if(r.platform) cxPlat[r.platform]=(cxPlat[r.platform]||0)+1; });
+    const cxPlatSorted = Object.entries(cxPlat).sort((a,b)=>b[1]-a[1]).slice(0,4);
+
+    // Stocke pour les charts
+    window._realData = {
+      timeline: { labels: timelineLabels, crisis: timelineCrisis },
+      platforms: { labels: platSorted.map(p=>p[0]), values: platSorted.map(p=>p[1]) },
+      sentiment: { neg: negPct, neu: neuPct, pos: posPct },
+      rating: { labels: ratingLabels, values: ratingVals },
+      cxSentiment: { pos: cxPosPct, neu: cxNeuPct, neg: cxNegPct },
+      cxPlatforms: { labels: cxPlatSorted.map(p=>p[0]), values: cxPlatSorted.map(p=>p[1]) }
+    };
+
+    initCharts();
+
+  } catch(e) {
+    console.warn('Supabase error, using mock:', e);
+    loadMockData();
+  }
+}
+
+function loadMockData(){
+  window._realData = {
+    timeline: {
+      labels: ['24 fév','25 fév','26 fév','27 fév','28 fév','01 mar','02 mar','03 mar','04 mar','05 mar','06 mar','07 mar','08 mar','09 mar','10 mar','11 mar'],
+      crisis: [12,18,24,31,45,67,89,124,156,187,210,243,289,312,340,380]
+    },
+    platforms: { labels:['Twitter/X','Reddit','TikTok','Facebook','Google Maps'], values:[280,198,167,112,43] },
+    sentiment: { neg:72, neu:19, pos:9 },
+    rating: { labels:['Oct','Nov','Déc','Jan','Fév','Mar'], values:[3.6,3.5,3.4,3.3,3.2,3.19] },
+    cxSentiment: { pos:41, neu:24, neg:35 },
+    cxPlatforms: { labels:['Trustpilot','Google Maps','App Store','Avis Vérifiés'], values:[680,490,248,157] }
+  };
   animateVal('kpi-alerts', 800);
   animateVal('kpi-likes', 2517);
   animateVal('kpi-mentions', 5250);
   animateVal('kpi-rating', 3.19, '', 2);
   animateVal('kpi-sov', 55, '%');
   animateVal('bhi-top', 58);
-});
+  initCharts();
+}
 
 // ─── TABS ──────────────────────────────────────────────────────
 function switchTab(name){
@@ -800,15 +925,16 @@ let chartsInit = false;
 function initCharts(){
   if(chartsInit) return;
   chartsInit = true;
+  const d = window._realData;
 
   // TIMELINE
   new Chart(document.getElementById('timelineChart'), {
     type:'line',
     data:{
-      labels: mock.timeline.labels,
+      labels: d.timeline.labels,
       datasets:[{
         label:'Mentions Crise',
-        data: mock.timeline.crisis,
+        data: d.timeline.crisis,
         borderColor:'#ef4444',
         backgroundColor:'rgba(239,68,68,.08)',
         tension:.4, fill:true, pointRadius:3, pointHoverRadius:6,
@@ -835,9 +961,9 @@ function initCharts(){
   new Chart(document.getElementById('platformChart'), {
     type:'doughnut',
     data:{
-      labels: mock.platforms.labels,
+      labels: d.platforms.labels,
       datasets:[{
-        data: mock.platforms.values,
+        data: d.platforms.values,
         backgroundColor:['#3b82f6','#f97316','#ec4899','#8b5cf6','#22c55e'],
         borderWidth:0, hoverOffset:6
       }]
@@ -857,7 +983,7 @@ function initCharts(){
     data:{
       labels:['Négatif','Neutre','Positif'],
       datasets:[{
-        data:[72,19,9],
+        data:[d.sentiment.neg, d.sentiment.neu, d.sentiment.pos],
         backgroundColor:['#ef4444','#9ca3af','#22c55e'],
         borderWidth:0, hoverOffset:4
       }]
@@ -872,10 +998,10 @@ function initCharts(){
   new Chart(document.getElementById('benchmarkChart'), {
     type:'bar',
     data:{
-      labels: mock.benchmark_topics.labels,
+      labels: ['SAV','Livraison','Qualité','Prix','Disponibilité','Design'],
       datasets:[{
         label:'IKEA',
-        data: mock.benchmark_topics.ikea,
+        data: [24,34,19,72,44,81],
         backgroundColor:'rgba(37,99,235,.85)',
         borderRadius:4, borderSkipped:false
       },{
@@ -926,9 +1052,9 @@ function initCharts(){
   new Chart(document.getElementById('ratingChart'), {
     type:'line',
     data:{
-      labels: mock.rating_evolution.labels,
+      labels: d.rating.labels,
       datasets:[{
-        data: mock.rating_evolution.values,
+        data: d.rating.values,
         borderColor:'#f59e0b',
         backgroundColor:'rgba(245,158,11,.1)',
         tension:.4, fill:true, pointRadius:4,
@@ -951,7 +1077,7 @@ function initCharts(){
     data:{
       labels:['Positif','Neutre','Négatif'],
       datasets:[{
-        data:[41,24,35],
+        data:[d.cxSentiment.pos, d.cxSentiment.neu, d.cxSentiment.neg],
         backgroundColor:['#22c55e','#9ca3af','#ef4444'],
         borderRadius:6, borderSkipped:false
       }]
@@ -971,9 +1097,9 @@ function initCharts(){
   new Chart(document.getElementById('cxPlatformChart'), {
     type:'bar',
     data:{
-      labels: mock.cx_platforms.labels,
+      labels: d.cxPlatforms.labels,
       datasets:[{
-        data: mock.cx_platforms.values,
+        data: d.cxPlatforms.values,
         backgroundColor:['#3b82f6','#22c55e','#f97316','#8b5cf6'],
         borderRadius:6, borderSkipped:false
       }]
@@ -989,8 +1115,8 @@ function initCharts(){
   });
 }
 
-// Init on load
-window.addEventListener('load', () => setTimeout(initCharts, 100));
+// Init on load — charge les vraies données Supabase
+window.addEventListener('load', () => loadRealData());
 </script>
 </body>
 </html>
