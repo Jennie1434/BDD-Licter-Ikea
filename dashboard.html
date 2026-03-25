@@ -9,85 +9,95 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ─── RESET & BASE ─── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#f0f2f8;
-  --card:#fff;
-  --border:#e5e9f2;
-  --text:#111827;
-  --muted:#6b7280;
-  --red:#ef4444;--red-light:#fef2f2;
-  --blue:#2563eb;--blue-light:#eff6ff;
-  --yellow:#f59e0b;--yellow-light:#fffbeb;
-  --green:#16a34a;--green-light:#f0fdf4;
-  --purple:#7c3aed;--purple-light:#f5f3ff;
-  --orange:#ea580c;--orange-light:#fff7ed;
-  --radius:12px;
-  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.04);
+  --ikea-blue:#003399;
+  --ikea-blue-dark:#002580;
+  --ikea-blue-light:#E8EEFF;
+  --ikea-yellow:#FFDA1A;
+  --ikea-yellow-dark:#E6C400;
+  --bg:#F7F7F2;
+  --card:#FFFFFF;
+  --border:#DDDDD5;
+  --text:#111111;
+  --muted:#767676;
+  --red:#CC0008;--red-light:#FFF0F0;
+  --blue:#003399;--blue-light:#E8EEFF;
+  --yellow:#FFDA1A;--yellow-light:#FFFBE0;
+  --green:#007A3D;--green-light:#E6F5EE;
+  --orange:#E06B00;--orange-light:#FFF3E6;
+  --radius:4px;
+  --shadow:0 1px 4px rgba(0,0,51,.08),0 2px 12px rgba(0,0,51,.05);
 }
-body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
 
 /* ─── TOPBAR ─── */
 .topbar{
-  background:#fff;
-  border-bottom:1px solid var(--border);
+  background:var(--ikea-blue);
+  border-bottom:none;
   padding:0 32px;
-  height:60px;
+  height:64px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,51,.2);
 }
-.logo{display:flex;align-items:center;gap:10px}
+.logo{display:flex;align-items:center;gap:14px}
 .logo-badge{
-  width:32px;height:32px;border-radius:8px;
-  background:linear-gradient(135deg,#1a56db,#7c3aed);
+  background:var(--ikea-yellow);
+  width:48px;height:32px;
+  border-radius:2px;
   display:flex;align-items:center;justify-content:center;
-  font-size:16px;
+  font-size:11px;font-weight:800;color:var(--ikea-blue);
+  letter-spacing:-.5px;
 }
-.logo-text{font-size:15px;font-weight:700;color:#111827}
-.logo-text span{color:#2563eb}
-.logo-sub{font-size:11px;color:#9ca3af;margin-top:1px}
-.topbar-right{display:flex;align-items:center;gap:16px}
+.logo-text{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.logo-text span{color:var(--ikea-yellow)}
+.logo-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:14px}
 .live-badge{
   display:flex;align-items:center;gap:6px;
-  background:#f0fdf4;border:1px solid #bbf7d0;
-  border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:#15803d;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;color:#fff;
+  letter-spacing:.3px;
 }
-.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-dot{width:7px;height:7px;background:#4AE54A;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .bhi-topbar{
   display:flex;align-items:center;gap:8px;
-  background:var(--blue-light);border:1px solid #bfdbfe;
-  border-radius:20px;padding:4px 14px;
+  background:var(--ikea-yellow);
+  border-radius:3px;padding:6px 16px;
 }
-.bhi-topbar .val{font-size:16px;font-weight:800;color:var(--blue)}
-.bhi-topbar .lbl{font-size:11px;color:#4b5563;font-weight:500}
+.bhi-topbar .val{font-size:18px;font-weight:800;color:var(--ikea-blue)}
+.bhi-topbar .lbl{font-size:10px;color:var(--ikea-blue);font-weight:700;opacity:.8}
 .btn-alert{
-  background:var(--red-light);border:1px solid #fecaca;
-  border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;color:var(--red);
-  cursor:pointer;display:flex;align-items:center;gap:5px;
-  animation:shakealert 3s infinite;
+  background:var(--red);border:none;
+  border-radius:3px;padding:7px 14px;font-size:11px;font-weight:700;color:#fff;
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  animation:shakealert 3s infinite;letter-spacing:.2px;
 }
 @keyframes shakealert{0%,90%,100%{transform:translateX(0)}92%{transform:translateX(-3px)}94%{transform:translateX(3px)}96%{transform:translateX(-2px)}98%{transform:translateX(2px)}}
 
 /* ─── CRISIS BANNER ─── */
 .crisis-banner{
-  background:linear-gradient(135deg,#7f1d1d,#991b1b);
-  color:#fff;padding:12px 32px;
+  background:var(--red);
+  color:#fff;padding:10px 32px;
   display:flex;align-items:center;justify-content:space-between;
+  border-bottom:3px solid #990006;
 }
 .crisis-banner .left{display:flex;align-items:center;gap:12px}
 .crisis-badge{
-  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
-  border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+  border-radius:2px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.5px;
 }
-.crisis-text{font-size:13px}
+.crisis-text{font-size:13px;font-weight:400}
 .crisis-text strong{font-weight:700}
 .crisis-text span{opacity:.8;font-size:12px;margin-left:8px}
 .crisis-meter{display:flex;align-items:center;gap:10px;font-size:12px}
-.meter-bar{width:120px;height:6px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden}
-.meter-fill{height:100%;background:#fbbf24;border-radius:3px;width:78%}
+.meter-bar{width:120px;height:5px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+.meter-fill{height:100%;background:var(--ikea-yellow);border-radius:2px;width:78%}
 
 /* ─── WRAPPER ─── */
 .wrapper{padding:28px 32px;max-width:1600px;margin:0 auto}
@@ -106,10 +116,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 .delta.up{color:#16a34a}.delta.down{color:var(--red)}.delta.warn{color:var(--yellow)}
 
 /* ─── TABS ─── */
-.tabs{display:flex;gap:4px;margin-bottom:24px;background:#fff;border-radius:10px;padding:5px;border:1px solid var(--border);width:fit-content}
-.tab{padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .2s}
-.tab.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
-.tab:hover:not(.active){background:var(--bg);color:var(--text)}
+.tabs{display:flex;gap:0;margin-bottom:24px;background:var(--card);border-radius:3px;padding:4px;border:1px solid var(--border);width:fit-content;box-shadow:var(--shadow)}
+.tab{padding:9px 24px;border-radius:2px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .15s;letter-spacing:.1px}
+.tab.active{background:var(--ikea-blue);color:#fff}
+.tab:hover:not(.active){background:var(--ikea-blue-light);color:var(--ikea-blue)}
 
 /* ─── VIEWS ─── */
 .view{display:none}.view.active{display:block}
@@ -122,9 +132,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 
 /* ─── CARD ─── */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:24px;height:100%}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.card-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
-.card-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--ikea-yellow)}
+.card-title{font-size:13px;font-weight:700;color:var(--ikea-blue);display:flex;align-items:center;gap:8px}
+.card-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:2px;letter-spacing:.3px}
 .chart-wrap{position:relative;height:220px}
 .chart-wrap-sm{position:relative;height:180px}
 .chart-wrap-lg{position:relative;height:280px}
@@ -146,21 +156,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 .predict-score{
   display:flex;align-items:center;justify-content:center;
   flex-direction:column;padding:24px;
-  background:linear-gradient(135deg,#fdf2f8,#f5f3ff);
-  border-radius:var(--radius);border:1px solid #e9d5ff;
+  background:var(--ikea-blue);
+  border-radius:var(--radius);
   margin-bottom:20px;
 }
 .predict-circle{
   width:100px;height:100px;border-radius:50%;
-  background:linear-gradient(135deg,#ec4899,#8b5cf6);
+  background:var(--ikea-yellow);
   display:flex;align-items:center;justify-content:center;
   flex-direction:column;margin-bottom:14px;
-  box-shadow:0 8px 24px rgba(139,92,246,.3);
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
 }
-.predict-pct{font-size:28px;font-weight:800;color:#fff;line-height:1}
-.predict-pct-lbl{font-size:10px;color:rgba(255,255,255,.8);font-weight:500}
-.predict-title{font-size:14px;font-weight:700;color:#6d28d9;margin-bottom:4px}
-.predict-sub{font-size:12px;color:#7c3aed;text-align:center}
+.predict-pct{font-size:28px;font-weight:800;color:var(--ikea-blue);line-height:1}
+.predict-pct-lbl{font-size:10px;color:var(--ikea-blue);font-weight:700;opacity:.7}
+.predict-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:4px}
+.predict-sub{font-size:12px;color:rgba(255,255,255,.8);text-align:center}
 
 /* ─── COMPETITOR ─── */
 .competitor-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -208,39 +218,39 @@ tr:hover td{background:#f9fafb}
 /* ─── BHI ─── */
 .bhi-big{
   display:flex;align-items:center;flex-direction:column;
-  padding:28px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);
-  border-radius:var(--radius);border:1px solid #bfdbfe;margin-bottom:20px;
+  padding:28px;background:var(--ikea-blue);
+  border-radius:var(--radius);margin-bottom:20px;
 }
 .bhi-ring{
   width:110px;height:110px;border-radius:50%;
-  background:conic-gradient(var(--blue) 0% 58%, #e5e9f2 58% 100%);
+  background:conic-gradient(var(--ikea-yellow) 0% 58%, rgba(255,255,255,.2) 58% 100%);
   display:flex;align-items:center;justify-content:center;
   position:relative;margin-bottom:14px;
 }
 .bhi-ring::after{
   content:'';position:absolute;width:80px;height:80px;
-  background:#fff;border-radius:50%;
+  background:var(--ikea-blue);border-radius:50%;
 }
-.bhi-val{position:relative;z-index:1;font-size:26px;font-weight:800;color:var(--blue)}
-.bhi-label{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px}
-.bhi-desc{font-size:11px;color:#6b7280;text-align:center;line-height:1.5}
+.bhi-val{position:relative;z-index:1;font-size:26px;font-weight:800;color:var(--ikea-yellow)}
+.bhi-label{font-size:14px;font-weight:800;color:#fff;margin-bottom:4px}
+.bhi-desc{font-size:11px;color:rgba(255,255,255,.65);text-align:center;line-height:1.5}
 .bhi-breakdown{width:100%;margin-top:16px}
-.bhi-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid #e5e9f2}
+.bhi-row{display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.12)}
 .bhi-row:last-child{border-bottom:none}
-.bhi-row .name{color:#6b7280}
-.bhi-row .score{font-weight:700;color:var(--blue)}
+.bhi-row .name{color:rgba(255,255,255,.7)}
+.bhi-row .score{font-weight:700;color:var(--ikea-yellow)}
 
 /* ─── VELOCITY ─── */
-.velocity-levels{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.velocity-levels{display:flex;gap:5px;margin-top:16px;flex-wrap:wrap}
 .v-level{
-  flex:1;padding:8px;border-radius:8px;text-align:center;
+  flex:1;padding:8px;border-radius:2px;text-align:center;
   font-size:10px;font-weight:700;border:2px solid transparent;
 }
-.v-level.active-level{border-color:currentColor;background:rgba(0,0,0,.04)}
-.v-normal{color:#16a34a;background:#f0fdf4}
-.v-modere{color:#d97706;background:#fffbeb}
-.v-eleve{color:#ea580c;background:#fff7ed}
-.v-critique{color:#dc2626;background:#fef2f2}
+.v-level.active-level{border-color:currentColor}
+.v-normal{color:#007A3D;background:#E6F5EE}
+.v-modere{color:#E06B00;background:#FFF3E6}
+.v-eleve{color:#CC0008;background:#FFF0F0}
+.v-critique{color:#fff;background:#CC0008}
 
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar{width:6px;height:6px}
@@ -260,10 +270,10 @@ tr:hover td{background:#f9fafb}
 <!-- ─── TOPBAR ─── -->
 <div class="topbar">
   <div class="logo">
-    <div class="logo-badge">📊</div>
+    <div class="logo-badge">IKEA</div>
     <div>
-      <div class="logo-text">IKEA <span>Brand Intelligence</span></div>
-      <div class="logo-sub">BDD Eugenia × Licter 2026</div>
+      <div class="logo-text">Brand <span>Intelligence</span> Platform</div>
+      <div class="logo-sub">BDD Eugenia × Licter 2026 · Powered by Supabase + OpenAI</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -297,49 +307,49 @@ tr:hover td{background:#f9fafb}
 
 <!-- KPIs -->
 <div class="kpis">
-  <div class="kpi" style="--accent:#ef4444">
+  <div class="kpi" style="--accent:#CC0008">
     <div class="icon">🚨</div>
     <div class="val" id="kpi-alerts">0</div>
     <div class="lbl">Crisis Alerts</div>
     <div class="delta down">↑ +340% en 24h</div>
   </div>
-  <div class="kpi" style="--accent:#f97316">
+  <div class="kpi" style="--accent:#E06B00">
     <div class="icon">❤️</div>
     <div class="val" id="kpi-likes">0</div>
     <div class="lbl">Likes moy. / post</div>
     <div class="delta warn">⚠ Impact viral</div>
   </div>
-  <div class="kpi" style="--accent:#2563eb">
+  <div class="kpi" style="--accent:#003399">
     <div class="icon">💬</div>
     <div class="val" id="kpi-mentions">0</div>
     <div class="lbl">Mentions totales</div>
     <div class="delta down">↑ +22% cette semaine</div>
   </div>
-  <div class="kpi" style="--accent:#22c55e">
+  <div class="kpi" style="--accent:#007A3D">
     <div class="icon">⭐</div>
     <div class="val" id="kpi-rating">0</div>
     <div class="lbl">Rating moyen</div>
     <div class="delta down">↓ -0.4 ce mois</div>
   </div>
-  <div class="kpi" style="--accent:#7c3aed">
+  <div class="kpi" style="--accent:#003399">
     <div class="icon">📊</div>
     <div class="val" id="kpi-sov">0%</div>
     <div class="lbl">Share of Voice</div>
     <div class="delta up">= Stable vs L.Merlin</div>
   </div>
-  <div class="kpi" style="--accent:#f59e0b">
+  <div class="kpi" style="--accent:#FFDA1A;background:#003399">
     <div class="icon">💰</div>
-    <div class="val">1.08M€</div>
-    <div class="lbl">CA menacé estimé</div>
-    <div class="delta down">↑ Agir maintenant</div>
+    <div class="val" style="color:#FFDA1A">1.08M€</div>
+    <div class="lbl" style="color:rgba(255,255,255,.7)">CA menacé estimé</div>
+    <div class="delta" style="color:#FFDA1A">↑ Agir maintenant</div>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('reputation')">🔴 Réputation & Crise</button>
-  <button class="tab" onclick="switchTab('benchmark')">🔵 Benchmark Marché</button>
-  <button class="tab" onclick="switchTab('cx')">🟡 Voix du Client</button>
+  <button class="tab active" onclick="switchTab('reputation')">Réputation & Crise</button>
+  <button class="tab" onclick="switchTab('benchmark')">Benchmark Marché</button>
+  <button class="tab" onclick="switchTab('cx')">Voix du Client</button>
 </div>
 
 <!-- ════════════════════════════════════════
@@ -805,7 +815,7 @@ async function loadRealData() {
     // Update BHI ring
     document.querySelector('.bhi-val').textContent = bhi;
     document.querySelector('.bhi-ring').style.background =
-      `conic-gradient(#2563eb 0% ${bhi}%, #e5e9f2 ${bhi}% 100%)`;
+      `conic-gradient(#FFDA1A 0% ${bhi}%, rgba(255,255,255,.2) ${bhi}% 100%)`;
     document.querySelectorAll('.bhi-row .score')[0].textContent = cxScore + '/100';
     document.querySelectorAll('.bhi-row .score')[1].textContent = repScore + '/100';
     document.querySelectorAll('.bhi-row .score')[2].textContent = sov + '/100';
@@ -958,8 +968,8 @@ function initCharts(){
       datasets:[{
         label:'Mentions Crise',
         data: d.timeline.crisis,
-        borderColor:'#ef4444',
-        backgroundColor:'rgba(239,68,68,.08)',
+        borderColor:'#CC0008',
+        backgroundColor:'rgba(204,0,8,.07)',
         tension:.4, fill:true, pointRadius:3, pointHoverRadius:6,
         borderWidth:2.5
       },{
@@ -990,7 +1000,7 @@ function initCharts(){
       labels: d.platforms.labels,
       datasets:[{
         data: d.platforms.values,
-        backgroundColor:['#3b82f6','#f97316','#ec4899','#8b5cf6','#22c55e'],
+        backgroundColor:['#003399','#FFDA1A','#CC0008','#007A3D','#E06B00'],
         borderWidth:0, hoverOffset:6
       }]
     },
@@ -1010,7 +1020,7 @@ function initCharts(){
       labels:['Négatif','Neutre','Positif'],
       datasets:[{
         data:[d.sentiment.neg, d.sentiment.neu, d.sentiment.pos],
-        backgroundColor:['#ef4444','#9ca3af','#22c55e'],
+        backgroundColor:['#CC0008','#DDDDD5','#007A3D'],
         borderWidth:0, hoverOffset:4
       }]
     },
@@ -1028,12 +1038,12 @@ function initCharts(){
       datasets:[{
         label:'IKEA',
         data: [24,34,19,72,44,81],
-        backgroundColor:'rgba(37,99,235,.85)',
-        borderRadius:4, borderSkipped:false
+        backgroundColor:'#003399',
+        borderRadius:2, borderSkipped:false
       },{
         label:'Leroy Merlin',
         data: [41,58,52,55,61,48],
-        backgroundColor:'rgba(234,88,12,.85)',
+        backgroundColor:'#007A3D',
         borderRadius:4, borderSkipped:false
       }]
     },
@@ -1081,8 +1091,8 @@ function initCharts(){
       labels: d.rating.labels,
       datasets:[{
         data: d.rating.values,
-        borderColor:'#f59e0b',
-        backgroundColor:'rgba(245,158,11,.1)',
+        borderColor:'#003399',
+        backgroundColor:'rgba(0,51,153,.08)',
         tension:.4, fill:true, pointRadius:4,
         borderWidth:2.5
       }]
@@ -1104,8 +1114,8 @@ function initCharts(){
       labels:['Positif','Neutre','Négatif'],
       datasets:[{
         data:[d.cxSentiment.pos, d.cxSentiment.neu, d.cxSentiment.neg],
-        backgroundColor:['#22c55e','#9ca3af','#ef4444'],
-        borderRadius:6, borderSkipped:false
+        backgroundColor:['#007A3D','#DDDDD5','#CC0008'],
+        borderRadius:2, borderSkipped:false
       }]
     },
     options:{
@@ -1126,8 +1136,8 @@ function initCharts(){
       labels: d.cxPlatforms.labels,
       datasets:[{
         data: d.cxPlatforms.values,
-        backgroundColor:['#3b82f6','#22c55e','#f97316','#8b5cf6'],
-        borderRadius:6, borderSkipped:false
+        backgroundColor:['#003399','#FFDA1A','#CC0008','#007A3D'],
+        borderRadius:2, borderSkipped:false
       }]
     },
     options:{
