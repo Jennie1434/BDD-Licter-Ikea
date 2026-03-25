@@ -753,14 +753,27 @@ function animateVal(id, target, suffix='', decimals=0){
 async function loadRealData() {
   try {
     // KPIs depuis reputation_crise
-    const { data: crisis } = await sb.from('reputation_crise').select('platform, likes, sentiment, date');
-    const { data: cx } = await sb.from('voix_client_cx').select('platform, rating, sentiment, category, date');
-    const { data: bench } = await sb.from('benchmark_marche').select('entity_analyzed, topic, sentiment_detected, platform');
+    const { data: crisis, error: e1 } = await sb.from('reputation_crise').select('*');
+    const { data: cx, error: e2 } = await sb.from('voix_client_cx').select('*');
+    const { data: bench, error: e3 } = await sb.from('benchmark_marche').select('*');
 
-    if (!crisis || !cx || !bench) throw new Error('Données vides');
+    if (e1) throw new Error('reputation_crise: ' + e1.message);
+    if (e2) throw new Error('voix_client_cx: ' + e2.message);
+    if (e3) throw new Error('benchmark_marche: ' + e3.message);
+    if (!crisis?.length || !cx?.length || !bench?.length) throw new Error('Tables vides');
+
+    // Debug — affiche les colonnes disponibles dans la console
+    console.log('✅ Supabase OK — colonnes reputation_crise:', Object.keys(crisis[0]));
+    console.log('✅ Supabase OK — colonnes voix_client_cx:', Object.keys(cx[0]));
+    console.log('✅ Supabase OK — colonnes benchmark_marche:', Object.keys(bench[0]));
+
+    // Helper — accès robuste au sentiment (plusieurs noms possibles)
+    const getSentiment = r => r.sentiment || r.sentiment_detected || r.sentiment_label || '';
+    // Helper — accès robuste à l'entité dans benchmark
+    const getEntity = r => r.entity_analyzed || r.brand || r.entity || r.source || '';
 
     // KPI — Crisis Alerts
-    const crisisAlerts = crisis.filter(r => r.sentiment === 'Negative').length;
+    const crisisAlerts = crisis.filter(r => getSentiment(r).toLowerCase().includes('neg')).length;
     const avgLikes = Math.round(crisis.reduce((s,r) => s + (r.likes||0), 0) / crisis.length);
     const totalMentions = crisis.length + cx.length + bench.length;
 
@@ -769,15 +782,15 @@ async function loadRealData() {
     const avgRating = ratings.length ? (ratings.reduce((a,b) => a+b, 0) / ratings.length) : 0;
 
     // SOV — IKEA vs Leroy Merlin
-    const ikea = bench.filter(r => r.entity_analyzed?.toLowerCase().includes('ikea')).length;
-    const leroy = bench.filter(r => r.entity_analyzed?.toLowerCase().includes('leroy')).length;
+    const ikea = bench.filter(r => getEntity(r).toLowerCase().includes('ikea')).length;
+    const leroy = bench.filter(r => getEntity(r).toLowerCase().includes('leroy')).length;
     const sov = ikea + leroy > 0 ? Math.round((ikea / (ikea + leroy)) * 100) : 55;
 
     // BHI
-    const cxPos = cx.filter(r => r.sentiment === 'Positive').length;
+    const cxPos = cx.filter(r => getSentiment(r).toLowerCase().includes('pos')).length;
     const cxTotal = cx.length;
     const cxScore = cxTotal ? Math.round((cxPos / cxTotal) * 100) : 45;
-    const crisisNeg = crisis.filter(r => r.sentiment === 'Negative').length;
+    const crisisNeg = crisis.filter(r => getSentiment(r).toLowerCase().includes('neg')).length;
     const repScore = crisis.length ? Math.round(100 - (crisisNeg / crisis.length) * 100) : 62;
     const bhi = Math.round(0.4 * cxScore + 0.3 * repScore + 0.3 * sov);
 
@@ -816,11 +829,16 @@ async function loadRealData() {
     const platSorted = Object.entries(platCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
     // ─ Sentiment crisis
-    const sentCount = {Positive:0, Negative:0, Neutral:0};
-    crisis.forEach(r => { if(r.sentiment) sentCount[r.sentiment]++; });
+    let sNeg=0, sNeu=0, sPos=0;
+    crisis.forEach(r => {
+      const s = getSentiment(r).toLowerCase();
+      if(s.includes('neg')) sNeg++;
+      else if(s.includes('pos')) sPos++;
+      else sNeu++;
+    });
     const total = crisis.length;
-    const negPct = Math.round((sentCount.Negative/total)*100);
-    const neuPct = Math.round((sentCount.Neutral/total)*100);
+    const negPct = Math.round((sNeg/total)*100);
+    const neuPct = Math.round((sNeu/total)*100);
     const posPct = 100 - negPct - neuPct;
 
     // Update sentiment bars
@@ -852,11 +870,16 @@ async function loadRealData() {
     const ratingVals = months.map(m => parseFloat((byMonth[m].sum/byMonth[m].count).toFixed(2)));
 
     // ─ Sentiment CX
-    const cxSentCount = {Positive:0,Negative:0,Neutral:0};
-    cx.forEach(r=>{ if(r.sentiment) cxSentCount[r.sentiment]++; });
+    let cxSNeg=0, cxSNeu=0, cxSPos=0;
+    cx.forEach(r=>{
+      const s = getSentiment(r).toLowerCase();
+      if(s.includes('neg')) cxSNeg++;
+      else if(s.includes('pos')) cxSPos++;
+      else cxSNeu++;
+    });
     const cxTot = cx.length;
-    const cxPosPct = Math.round((cxSentCount.Positive/cxTot)*100);
-    const cxNeuPct = Math.round((cxSentCount.Neutral/cxTot)*100);
+    const cxPosPct = Math.round((cxSPos/cxTot)*100);
+    const cxNeuPct = Math.round((cxSNeu/cxTot)*100);
     const cxNegPct = 100-cxPosPct-cxNeuPct;
 
     // ─ Plateformes CX
