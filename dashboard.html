@@ -753,9 +753,9 @@ function animateVal(id, target, suffix='', decimals=0){
 async function loadRealData() {
   try {
     // KPIs depuis reputation_crise
-    const { data: crisis, error: e1 } = await sb.from('reputation_crise').select('*');
-    const { data: cx, error: e2 } = await sb.from('voix_client_cx').select('*');
-    const { data: bench, error: e3 } = await sb.from('benchmark_marche').select('*');
+    const { data: crisis, error: e1 } = await sb.from('reputation_crise').select('*').limit(5000);
+    const { data: cx, error: e2 } = await sb.from('voix_client_cx').select('*').limit(5000);
+    const { data: bench, error: e3 } = await sb.from('benchmark_marche').select('*').limit(5000);
 
     if (e1) throw new Error('reputation_crise: ' + e1.message);
     if (e2) throw new Error('voix_client_cx: ' + e2.message);
